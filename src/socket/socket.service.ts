@@ -28,11 +28,14 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
 
+    // Redis client cập nhật service key bằng channel discovery
     this.redisClient = await this.newRedisClient();
+    // subcriber client nhận message
     this.subscriberClient = await this.newRedisClient();
+    // publisherClient gửi đi message
     this.publisherClient = await this.newRedisClient();
 
-    this.subscriberClient.subscribe(  this.serviceId);
+    this.subscriberClient.subscribe(this.serviceId);
 
     this.subscriberClient.on('message', (channel, message) => {
       const { userId, payload } = JSON.parse(message);
@@ -41,10 +44,12 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
 
     await this.channelDiscovery();
   }
+  
+  // Tạo redis instance
   private async newRedisClient() {
     return createClient({
       host: 'localhost',
-      port: 6379,
+      port: 30466,
     });
   }
 
@@ -59,15 +64,26 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
     }, 2000);
   }
 
+  /**
+   * Gửi message đến một client có mã userId và xem có đến từ redis hay không
+   * @param userId 
+   * @param payload 
+   * @param fromRedisChannel 
+   */
   async sendMessage(
     userId: string,
     payload: string,
     fromRedisChannel: boolean,
   ) {
+    // Gửi tới tất cả các thiết bị gắn với một userId
     this.socketGateway.connectedSockets[userId]?.forEach(socket =>
       socket.send(payload),
     );
+
+    // Nếu không từ redis channel mà từ client thì
+    // sẽ gửi tới tất cả các service khác để kiểm tra xem có client id ứng với id hiện tại không
     if (!fromRedisChannel) {
+      // Tìm tất cả các channel và gửi payload tới đó
       this.redisClient.keys('SOCKET_CHANNEL_*', (err, ids) => {
         ids
           .filter(p => p != this.serviceId)

@@ -6,9 +6,12 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // register adapter
-  app.useWebSocketAdapter(new WsAdapter(app) as any);
+  // sử dụng ws adapter
+  app.useWebSocketAdapter(new WsAdapter(app));
 
-  await app.listen(parseInt(process.env['PORT'] , 10) || 3000);
+  const port = Math.floor(Math.random() * 10)
+  console.log(port)
+
+  await app.listen(parseInt(process.env['PORT'] , 10) || port);
 }
 bootstrap();

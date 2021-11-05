@@ -1,5 +1,5 @@
 const ws = require('ws');
-const port = 3001;
+const port = 7;
 const socket = new ws(`ws://localhost:${port}`, {
   headers: { Cookie: 'token=user1' },
 });
